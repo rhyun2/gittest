@@ -17,3 +17,27 @@ def divide(a, b):
     if b == 0:
         raise ValueError("0으로 나눌 수 없습니다.")
     return a / b
+
+def power(base, exp):
+    """
+    거듭제곱을 계산합니다.
+    
+    Args:
+        base: 밑수
+        exp: 지수 (정수만 허용, 음수 가능)
+    
+    Returns:
+        base의 exp 제곱 값
+    
+    Raises:
+        TypeError: exp가 정수가 아닌 경우
+    
+    Examples:
+        >>> power(2, 3)
+        8
+        >>> power(2, -1)
+        0.5
+    """
+    if not isinstance(exp, int):
+        raise TypeError("지수는 정수여야 합니다.")
+    return base ** exp
