@@ -17,3 +17,9 @@ def divide(a, b):
     if b == 0:
         raise ValueError("0으로 나눌 수 없습니다.")
     return a / b
+
+def power(base, exp):
+    """거듭제곱을 계산합니다."""
+    if not isinstance(exp, int):
+        raise TypeError("지수는 정수여야 합니다.")
+    return base ** exp
