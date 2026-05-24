@@ -13,10 +13,11 @@ def multiply(a, b):
     return a * b
 
 def divide(a, b):
-    """두 수를 나눕니다."""
+    """나눗셈 - 정수면 정수로 반환"""
     if b == 0:
         raise ValueError("0으로 나눌 수 없습니다.")
-    return a / b
+    result = a / b
+    return int(result) if result.is_integer() else result  # ← 다르게 변경
 
 def power(base, exp):
     """
