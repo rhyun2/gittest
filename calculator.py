@@ -13,11 +13,11 @@ def multiply(a, b):
     return a * b
 
 def divide(a, b):
-    """나눗셈 - 정수면 정수로 반환"""
+    """나눗셈 - 정수면 정수로, 아니면 소수점 2자리"""
     if b == 0:
         raise ValueError("0으로 나눌 수 없습니다.")
-    result = a / b
-    return int(result) if result.is_integer() else result  # ← 다르게 변경
+    result = round(a / b, 2)
+    return int(result) if result == int(result) else result
 
 def power(base, exp):
     """
