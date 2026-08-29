@@ -1,13 +1,23 @@
-# API 키 — Config/Secrets.xcconfig.example을 복사해서 만든다
+# API 키
+# config.example.js를 복사해서 만든다
+web/js/config.js
+# (archive) iOS용
 Secrets.xcconfig
 
-# Xcode
+# Node
+node_modules/
+
+# Xcode (archive)
 xcuserdata/
 *.xcuserstate
 DerivedData/
 build/
 *.xcscmblueprint
 *.xccheckout
+
+# Python
+__pycache__/
+.pytest_cache/
 
 # macOS
 .DS_Store

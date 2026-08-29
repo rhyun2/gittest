@@ -1,0 +1,262 @@
+# 기술 설계 — 내 주변 관광지·맛집 웹앱
+
+제품 요구사항은 [prd.md](./prd.md)에 있다. 이 문서는 **어떻게 만들 것인가**를 다룬다.
+
+> 코드 조각은 설명용 발췌다. 실제 구현은 `web/`에 있고, 실제 브라우저에서 검증했다.
+
+---
+
+## 1. 결론
+
+**빌드 없는 정적 웹앱 + 카카오맵 JavaScript SDK.** 서버도, npm도, 번들러도 없다.
+
+`index.html` 하나와 ES 모듈 네 개가 전부이고, `git push`가 곧 배포다.
+
+---
+
+## 2. iOS 네이티브에서 무엇이 어떻게 바뀌었나
+
+원래 설계는 SwiftUI 네이티브였다([archive/ios-nearby-places-design.md](../archive/ios-nearby-places-design.md)). 개발 난이도 때문에 웹으로 전환하면서 **역할은 그대로 두고 구현체만 갈아끼웠다.**
+
+| 역할 | iOS (중단) | 웹 (현재) |
+|---|---|---|
+| 위치 획득 | `LocationService` — CoreLocation `CLLocationUpdate` | `js/geo.js` — `navigator.geolocation` |
+| 장소 검색 | `KakaoPlacesRepository` — REST `category.json` | `js/kakao.js` — SDK `services.Places.categorySearch` |
+| 데이터 소스 추상화 | `PlacesRepository` 프로토콜 | `searchNearby()` 함수 = 모듈 경계 |
+| 상태 관리 | `NearbyViewModel` (`@Observable`) | `js/main.js` — 상태 객체 + 재렌더 |
+| 화면 | `NearbyListView` / `PlaceRow` | `index.html` `<template>` + `js/ui.js` |
+| 키 관리 | xcconfig → Info.plist (노출 방어 **불가**) | `config.js` + 도메인 등록 (노출돼도 **무효화됨**) |
+| 배포 | Xcode 빌드 · 서명 · 심사 | GitHub Pages (`git push`) |
+
+**쉬워진 것**
+- 서명·프로비저닝·앱스토어 심사가 통째로 사라졌다.
+- 설치 없이 링크로 공유된다. 일회성 사용자에게 특히 잘 맞는다.
+- **키 노출 문제가 구조적으로 해결됐다.** iOS에서는 REST 키를 앱에 넣으면 추출을 막을 방법이 없어 결국 프록시가 필요했는데, 웹의 JS 앱키는 등록된 도메인 밖에서 동작하지 않으므로 프록시가 필요 없다.
+- 실제 브라우저에서 자동 검증이 가능하다(§8).
+
+**까다로워진 것**
+- Geolocation은 보안 컨텍스트에서만 동작하므로 **HTTPS 배포가 필수**다.
+- iOS Safari에서 위치 권한을 거부하면 설정 앱으로 딥링크할 수 없다. 네이티브에서는 `UIApplication.openSettingsURLString` 한 줄이면 됐다.
+- 백그라운드 위치, 푸시 같은 것은 애초에 불가능하다. 다만 이 앱은 쓰지 않는다.
+
+---
+
+## 3. 왜 REST가 아니라 JavaScript SDK인가
+
+**카카오 REST API(`dapi.kakao.com/v2/local/...`)는 브라우저에서 호출할 수 없다.** CORS 헤더를 내려주지 않아 프리플라이트에서 막힌다. iOS 앱은 CORS 제약이 없어 REST를 그대로 썼지만, 웹에서는 선택지가 아니다.
+
+대안은 두 가지였다.
+
+| 방법 | 판정 |
+|---|---|
+| 프록시 서버를 두고 REST 호출 | 서버가 생긴다. "난이도를 낮춘다"는 전환 목적에 정면으로 반한다 |
+| **카카오맵 JS SDK의 `services` 라이브러리** | **채택.** 같은 데이터를 CORS 없이, 서버 없이 받는다 |
+
+SDK가 주는 데이터는 REST와 사실상 동일하다 — `place_name`, `category_name`, `address_name`, `road_address_name`, `phone`, `x`, `y`, `place_url`, 그리고 **`distance`**.
+
+### 거리순 정렬은 여전히 서버가 한다
+
+이건 iOS 설계에서 그대로 살아남은 핵심이다.
+
+```js
+places.categorySearch(category, callback, {
+  location: new kakao.maps.LatLng(lat, lng),
+  radius: 1000,
+  sort: kakao.maps.services.SortBy.DISTANCE,  // ← 이것 하나로 정렬 끝
+  size: 15,
+});
+```
+
+앱에는 거리 계산도, 정렬도, 비교 함수도 없다. 카카오가 정렬해 준 배열을 그대로 렌더링한다.
+
+### 좌표 순서 함정이 두 겹이다
+
+iOS에서는 "x가 경도, y가 위도"라는 함정 하나였는데, 웹에서는 **입력과 출력의 순서가 서로 다르다.**
+
+| | 순서 |
+|---|---|
+| 입력: `new kakao.maps.LatLng(a, b)` | **(위도, 경도)** |
+| 출력: 결과 항목의 `x`, `y` | **x = 경도, y = 위도** |
+
+같은 SDK 안에서 규칙이 뒤집힌다. 그래서 좌표 변환은 `js/kakao.js` 밖으로 새지 않게 한 파일 안에서만 한다.
+
+```js
+// js/kakao.js — 입력
+location: new kakao.maps.LatLng(lat, lng),
+
+// js/kakao.js — 출력 정규화
+const lng = Number(item.x);
+const lat = Number(item.y);
+```
+
+---
+
+## 4. 구조
+
+```
+web/
+├── index.html          레이아웃 + <template> 두 개
+├── styles.css          다크 모드, safe-area 대응
+└── js/
+    ├── config.js       카카오 JS 앱키 (gitignore, 예시 파일에서 복사)
+    ├── kakao.js        SDK 로드 + 검색 + 응답 정규화
+    ├── geo.js          Geolocation Promise 래핑 + 에러 분류
+    ├── ui.js           렌더링만 담당 (상태를 모름)
+    └── main.js         상태 + 이벤트 + 조립
+```
+
+의존 방향은 한쪽으로만 흐른다. `main.js → {kakao, geo, ui}`이고, `ui.js`는 상태 객체를 알지 못한 채 전달받은 값만 그린다.
+
+### 상태
+
+프레임워크 없이 평범한 객체 하나다.
+
+```js
+const state = {
+  category: "AT4",   // AT4 관광지 / FD6 맛집 / CE7 카페
+  radius: 1000,
+  coords: null,      // 마지막으로 잡은 좌표
+  appKey: null,
+  requestId: 0,      // 늦게 온 응답이 최신 결과를 덮어쓰지 못하게
+};
+```
+
+`requestId`는 경쟁 조건 방어다. 사용자가 카테고리를 빠르게 연달아 누르면 이전 요청이 나중에 도착할 수 있는데, 응답을 반영하기 전에 자기 `requestId`가 아직 최신인지 확인한다.
+
+### 좌표 재사용 규칙 (iOS 뷰모델에서 그대로 옮겨옴)
+
+- **카테고리·반경 변경** → 위치를 다시 잡지 않고 저장된 좌표로 재검색
+- **새로고침 버튼** → 위치를 다시 잡되, **200m 미만 이동이면 좌표를 갱신하지 않는다**
+
+두 번째 규칙이 없으면 GPS가 미세하게 흔들릴 때마다 목록 순서가 바뀐다. 검증에서 카테고리·반경을 두 번 바꿔도 `getCurrentPosition` 호출이 1회에 머무르는 것을 확인했다.
+
+---
+
+## 5. 위치 획득
+
+```js
+navigator.geolocation.getCurrentPosition(success, error, {
+  enableHighAccuracy: true,
+  timeout: 10_000,
+  maximumAge: 60_000,   // 1분 내 좌표는 재사용, GPS를 또 켜지 않음
+});
+```
+
+`getCurrentPosition`은 콜백 기반이라 Promise로 감싸고, 에러 코드를 의미 있는 종류로 바꾼다.
+
+| 코드 | 분류 | 화면 |
+|---|---|---|
+| 1 `PERMISSION_DENIED` | `denied` | 설정 경로 안내 + 다시 시도 |
+| 2 `POSITION_UNAVAILABLE` | `unavailable` | 일반 오류 + 다시 시도 |
+| 3 `TIMEOUT` | `timeout` | "실외에서 다시 시도" |
+
+여기에 표준에 없는 분류를 하나 더 뒀다. **`insecure`** — HTTPS가 아닐 때다.
+
+```js
+if (!window.isSecureContext) {
+  return Promise.reject(new GeoError(GeoErrorKind.INSECURE, "..."));
+}
+```
+
+HTTP로 열면 브라우저가 조용히 거부하거나 권한 거부처럼 위장된 에러를 준다. 원인을 헷갈리지 않도록 미리 걸러낸다. `http://localhost`는 보안 컨텍스트로 인정되므로 로컬 개발은 그대로 된다.
+
+---
+
+## 6. 키 관리 — iOS와 결정적으로 다른 지점
+
+**JavaScript 앱키는 브라우저에 노출될 수밖에 없다.** 이건 숨길 수 있는 종류의 값이 아니다.
+
+대신 카카오 콘솔의 **앱 설정 → 플랫폼 → Web → 사이트 도메인**에 등록한 오리진에서만 키가 동작한다. 남이 키를 가져가도 자기 도메인에서는 쓸 수 없다. Google Maps JS 키와 같은 모델이다.
+
+등록해야 할 오리진:
+```
+http://localhost:8000        로컬 개발
+https://<사용자>.github.io    배포
+```
+
+**따라서 이 키는 저장소에 커밋해도 실질적인 문제가 없다.** 다만 기본 설정은 `config.js`를 `.gitignore`에 넣고 배포 시 GitHub Actions가 저장소 Secret으로 생성하게 해뒀다. 공개 저장소에 키 문자열을 남기지 않는 편이 심리적으로 편하고, iOS 버전의 `Secrets.xcconfig` 패턴과 구조가 같아 이해하기 쉽기 때문이다. 번거로우면 그냥 커밋해도 된다.
+
+`config.js`가 없을 때 앱 전체가 죽지 않도록 **동적 import**로 읽는다.
+
+```js
+async function loadAppKey() {
+  try {
+    const module = await import("./config.js");
+    return module.KAKAO_JS_KEY ?? null;
+  } catch {
+    return null;   // → "앱키 설정이 필요해요" 화면
+  }
+}
+```
+
+정적 `import`였다면 파일 하나가 없다는 이유로 모듈 그래프 전체가 실패해 흰 화면이 된다.
+
+---
+
+## 7. 렌더링과 XSS
+
+장소 이름과 주소는 **외부에서 온 문자열**이다. `innerHTML`을 쓰면 주입 경로가 열린다.
+
+`index.html`에 `<template>`을 두고, 값은 전부 `textContent`로만 넣는다.
+
+```js
+const item = placeTemplate.content.cloneNode(true);
+item.querySelector(".place-name").textContent = place.name;   // innerHTML 아님
+```
+
+프로젝트 전체에 `innerHTML` 사용이 한 곳도 없다.
+
+---
+
+## 8. 검증
+
+Chromium + Playwright로 실제 브라우저에서 자동 검증한다. 카카오 앱키 없이 `window.kakao`를 스텁으로 주입해 앱 자체 로직만 떼어 확인한다.
+
+```js
+await context.grantPermissions(["geolocation"]);
+await context.setGeolocation({ latitude: 37.5796, longitude: 126.977 });  // 경복궁
+await page.addInitScript(kakaoStub);
+```
+
+확인 항목 22개가 통과했다. 주요 항목:
+
+- 카카오가 준 순서를 **그대로** 렌더링 (앱이 재정렬하지 않음)
+- `sort=distance`로 요청하고 `LatLng`에 (위도, 경도) 순서로 전달
+- 좌표가 깨진 항목은 목록에서 제외 (4건 중 3건 렌더)
+- 도로명 주소가 없으면 지번 주소로 폴백
+- 카테고리·반경을 두 번 바꿔도 위치 획득은 **1회**
+- 결과 0건일 때 한 단계 넓은 반경(1km → 3km)으로 재검색
+- 권한 거부 시 검색을 시도조차 하지 않고 안내 화면 표시
+- `config.js` 없을 때 앱키 안내 화면 표시
+
+**검증하지 못한 것**: 실제 카카오 앱키로 실 데이터를 받아오는 경로. 키가 없어 스텁으로 대체했으므로, 로컬에서 키를 넣고 한 번 확인해야 한다.
+
+---
+
+## 9. 배포
+
+`.github/workflows/deploy-pages.yml`이 `web/`을 GitHub Pages로 올린다. 배포 직전 저장소 Secret `KAKAO_JS_KEY`로 `js/config.js`를 만들어 넣는다.
+
+수동 선행 조건 두 가지:
+1. 저장소 **Settings → Pages → Source**를 `GitHub Actions`로 변경
+2. 저장소 **Settings → Secrets and variables → Actions**에 `KAKAO_JS_KEY` 등록
+3. 카카오 콘솔에 배포 도메인(`https://<사용자>.github.io`) 등록
+
+---
+
+## 10. 다음 단계
+
+| 단계 | 내용 |
+|---|---|
+| 2단계 | 지도 뷰(카카오맵 SDK에 이미 포함), 장소 상세, 길찾기 딥링크, 검색 결과 캐싱 |
+| 3단계 | PWA 홈 화면 추가, 즐겨찾기(localStorage), TourAPI 이미지 보강 |
+
+프록시 도입은 **로드맵에서 빠졌다.** 도메인 제한이 그 역할을 대신한다.
+
+## 참고 자료
+
+- [Kakao 지도 Web API 문서](https://apis.map.kakao.com/web/documentation/)
+- [카카오 로컬 API — 카테고리 코드 및 응답 필드](https://developers.kakao.com/docs/latest/ko/local/dev-guide)
+- [카카오맵 API 무료 쿼터 정책 변경 공지](https://devtalk.kakao.com/t/api-notice-on-new-kakao-map-api-features-and-free-quota-policy/150222)
+- [Geolocation API — MDN](https://developer.mozilla.org/en-US/docs/Web/API/Geolocation_API)
+- [Secure contexts — MDN](https://developer.mozilla.org/en-US/docs/Web/Security/Secure_Contexts)

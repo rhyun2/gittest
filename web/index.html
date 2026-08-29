@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="description" content="현재 위치 주변의 관광지와 맛집을 가까운 순으로 찾아줍니다.">
+  <meta name="color-scheme" content="light dark">
+  <title>내 주변 — 관광지 · 맛집</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <header class="header">
+    <h1 class="title">내 주변</h1>
+    <button type="button" id="refresh" class="icon-button" aria-label="현재 위치로 새로고침">
+      <span aria-hidden="true">↻</span>
+    </button>
+  </header>
+
+  <div class="controls">
+    <div class="segmented" role="tablist" aria-label="카테고리" id="category-tabs"></div>
+
+    <div class="radius-row">
+      <span class="radius-label" id="radius-label">반경</span>
+      <div class="segmented" role="radiogroup" aria-labelledby="radius-label" id="radius-tabs"></div>
+    </div>
+  </div>
+
+  <main id="content" class="content" aria-live="polite" aria-busy="false"></main>
+
+  <!-- 목록 항목 템플릿. 값은 전부 textContent로 넣어 HTML 주입 여지를 없앤다. -->
+  <template id="place-item-template">
+    <li class="place">
+      <a class="place-link" target="_blank" rel="noopener noreferrer">
+        <div class="place-main">
+          <p class="place-name"></p>
+          <p class="place-category"></p>
+          <p class="place-address"></p>
+        </div>
+        <span class="place-distance"></span>
+      </a>
+    </li>
+  </template>
+
+  <template id="message-template">
+    <div class="message">
+      <p class="message-icon" aria-hidden="true"></p>
+      <h2 class="message-title"></h2>
+      <p class="message-body"></p>
+      <div class="message-actions"></div>
+    </div>
+  </template>
+
+  <script type="module" src="./js/main.js"></script>
+</body>
+</html>
