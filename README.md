@@ -7,6 +7,8 @@ Claude Code + GitHub 워크플로우 실습 저장소. 현재 두 가지가 들�
 현재 위치 주변의 관광지·맛집·카페를 가까운 순으로 보여주는 모바일 웹앱.
 빌드 없는 정적 페이지 + 카카오맵 JavaScript SDK. 서버 없음.
 
+🔗 **https://rhyun2.github.io/gittest/** — 아이폰에서는 이 주소로 접속한다.
+
 ```bash
 cp web/js/config.example.js web/js/config.js   # 카카오 JavaScript 앱키 입력
 python3 -m http.server 8000 -d web
