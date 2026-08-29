@@ -2,6 +2,9 @@
 
 현재 위치 주변의 관광지·맛집·카페를 **가까운 순으로** 보여주는 모바일 웹앱.
 
+🔗 **배포 주소 — https://rhyun2.github.io/gittest/**
+아이폰에서는 이 주소로 접속한다. ([배포 설정](#배포-github-pages)을 마쳐야 열린다)
+
 - [제품 요구사항(PRD)](../docs/prd.md) · [기술 설계](../docs/web-nearby-places-design.md)
 - 빌드 없음. npm·node 불필요. `index.html` + ES 모듈 4개가 전부다.
 - **아이폰 Safari에서 정상 동작한다.** HTTPS로 배포한 주소로 접속해 위치 권한을 허용하면 현재 위치 기준으로 조회된다. ([6단계](#6-아이폰-실기기에서-확인))
@@ -67,7 +70,7 @@ ls web/js
 http://localhost:8000
 ```
 
-배포까지 할 거라면 `https://<사용자>.github.io`도 함께 등록한다.
+배포까지 할 거라면 `https://rhyun2.github.io`도 함께 등록한다.
 
 > 콘솔 개편으로 이 항목이 **플랫폼 키 → JavaScript 키 → JavaScript SDK 도메인** 아래에 있는 계정도 있다. 두 경로 모두 같은 설정이다.
 
@@ -133,7 +136,7 @@ Chrome 기준: `F12` → `Ctrl/Cmd+Shift+P` → `sensors` 입력 → **Show Sens
 
 | 접속 주소 | 위치 | 비고 |
 |---|---|---|
-| `https://<사용자>.github.io/gittest/` | ✅ | 실제 사용 경로 |
+| `https://rhyun2.github.io/gittest/` | ✅ | 실제 사용 경로 |
 | `https://xxx.trycloudflare.com` | ✅ | 임시 터널 (아래 B) |
 | PC의 `http://localhost:8000` | ✅ | localhost는 예외적으로 보안 컨텍스트로 인정 |
 | `http://192.168.x.x:8000` | ❌ | 개발 PC 서버에 LAN으로 접속 — **여기만 막힌다** |
@@ -186,7 +189,7 @@ cloudflared tunnel --url http://localhost:8000
 
 1. 저장소 **Settings → Pages → Source**를 `GitHub Actions`로 변경
 2. 저장소 **Settings → Secrets and variables → Actions**에 `KAKAO_JS_KEY` 등록
-3. 카카오 콘솔 사이트 도메인에 배포 주소(`https://<사용자>.github.io`) 등록 (2-4 참고)
+3. 카카오 콘솔 사이트 도메인에 배포 주소(`https://rhyun2.github.io`) 등록 (2-4 참고)
 
 워크플로가 배포 직전 Secret으로 `config.js`를 만들어 넣는다.
 

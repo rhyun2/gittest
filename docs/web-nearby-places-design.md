@@ -170,8 +170,8 @@ HTTP로 열면 브라우저가 조용히 거부하거나 권한 거부처럼 위
 
 등록해야 할 오리진:
 ```
-http://localhost:8000        로컬 개발
-https://<사용자>.github.io    배포
+http://localhost:8000       로컬 개발
+https://rhyun2.github.io   배포
 ```
 
 **따라서 이 키는 저장소에 커밋해도 실질적인 문제가 없다.** 다만 기본 설정은 `config.js`를 `.gitignore`에 넣고 배포 시 GitHub Actions가 저장소 Secret으로 생성하게 해뒀다. 공개 저장소에 키 문자열을 남기지 않는 편이 심리적으로 편하고, iOS 버전의 `Secrets.xcconfig` 패턴과 구조가 같아 이해하기 쉽기 때문이다. 번거로우면 그냥 커밋해도 된다.
@@ -237,10 +237,12 @@ await page.addInitScript(kakaoStub);
 
 `.github/workflows/deploy-pages.yml`이 `web/`을 GitHub Pages로 올린다. 배포 직전 저장소 Secret `KAKAO_JS_KEY`로 `js/config.js`를 만들어 넣는다.
 
-수동 선행 조건 두 가지:
+배포 주소는 **https://rhyun2.github.io/gittest/** 다.
+
+수동 선행 조건 세 가지:
 1. 저장소 **Settings → Pages → Source**를 `GitHub Actions`로 변경
 2. 저장소 **Settings → Secrets and variables → Actions**에 `KAKAO_JS_KEY` 등록
-3. 카카오 콘솔에 배포 도메인(`https://<사용자>.github.io`) 등록
+3. 카카오 콘솔에 배포 도메인(`https://rhyun2.github.io`) 등록 — 경로 없이 오리진만
 
 ---
 
