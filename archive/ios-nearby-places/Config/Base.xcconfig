@@ -1,0 +1,5 @@
+// 프로젝트 공통 빌드 설정.
+//
+// 실제 API 키는 같은 폴더의 Secrets.xcconfig에 둔다. `#include?`(물음표)라서
+// 파일이 없어도 빌드는 성공하고, 대신 앱이 "API 키 설정이 필요해요" 화면을 띄운다.
+#include? "Secrets.xcconfig"

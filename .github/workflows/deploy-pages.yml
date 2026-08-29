@@ -1,0 +1,50 @@
+name: Deploy web app to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "web/**"
+      - ".github/workflows/deploy-pages.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# 배포는 한 번에 하나만. 진행 중인 배포는 취소하지 않고 끝내게 둔다.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # config.js는 .gitignore 대상이라 저장소에 없다. 배포할 때 Secret으로 만들어 넣는다.
+      # JavaScript 앱키는 어차피 브라우저에 노출되며, 실제 방어선은 카카오 콘솔의
+      # 사이트 도메인 등록이다. 그래도 공개 저장소에 키 문자열을 남기지 않으려는 조치다.
+      - name: Generate config.js
+        env:
+          KAKAO_JS_KEY: ${{ secrets.KAKAO_JS_KEY }}
+        run: |
+          if [ -z "$KAKAO_JS_KEY" ]; then
+            echo "::error::저장소 Secret KAKAO_JS_KEY가 없습니다. Settings > Secrets and variables > Actions에서 등록하세요."
+            exit 1
+          fi
+          printf 'export const KAKAO_JS_KEY = "%s";\n' "$KAKAO_JS_KEY" > web/js/config.js
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: web
+
+      - id: deployment
+        uses: actions/deploy-pages@v4
