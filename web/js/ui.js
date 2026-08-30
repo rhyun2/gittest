@@ -68,18 +68,29 @@ export function renderLoading(message = "주변을 찾는 중…") {
 }
 
 /**
- * 장소 목록. 이미 거리순으로 정렬된 배열을 순서 그대로 그린다.
- * (카카오는 서버가, 큐레이션은 curated.js 가 정렬해 준다)
+ * 장소 목록을 두 구획으로 그린다. 위가 직접 정리한 장소, 아래가 카카오 실시간 결과다.
+ * 각 배열은 이미 거리순으로 정렬돼 있다 (카카오는 서버가, 큐레이션은 curated.js 가).
  *
- * @param {Array<object>} places
- * @param {{source: "curated" | "kakao"}} options 목록 위에 붙일 출처 배지
+ * @param {{curated: Array<object>, nearby: Array<object>}} sections
  */
-export function renderPlaces(places, { source } = {}) {
+export function renderPlaces({ curated = [], nearby = [] } = {}) {
   content.setAttribute("aria-busy", "false");
 
   const wrapper = document.createDocumentFragment();
-  if (source) wrapper.append(buildSourceBadge(source, places.length));
 
+  if (curated.length > 0) {
+    wrapper.append(buildSectionBadge(`직접 정리한 장소 ${curated.length}곳`));
+    wrapper.append(buildList(curated));
+  }
+  if (nearby.length > 0) {
+    wrapper.append(buildSectionBadge(`카카오맵 검색 결과 ${nearby.length}곳`));
+    wrapper.append(buildList(nearby));
+  }
+
+  replace(wrapper);
+}
+
+function buildList(places) {
   const list = document.createElement("ol");
   list.className = "place-list";
   // 사진이 섞여 있으면 없는 항목의 왼쪽 정렬이 어긋난다. 자리만 비워 맞춰 준다.
@@ -128,17 +139,13 @@ export function renderPlaces(places, { source } = {}) {
     list.append(item);
   }
 
-  wrapper.append(list);
-  replace(wrapper);
+  return list;
 }
 
-function buildSourceBadge(source, count) {
+function buildSectionBadge(text) {
   const badge = document.createElement("p");
   badge.className = "source-badge";
-  badge.textContent =
-    source === "curated"
-      ? `직접 정리한 장소 ${count}곳`
-      : "카카오맵 실시간 검색 결과";
+  badge.textContent = text;
   return badge;
 }
 

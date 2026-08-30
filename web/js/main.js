@@ -5,7 +5,7 @@
  * 상태는 평범한 객체 하나이고, 바뀔 때마다 run()이 화면을 다시 그린다.
  */
 import { CATEGORIES, PlacesError, PlacesErrorKind, searchNearby } from "./kakao.js";
-import { findNearbyCurated } from "./curated.js";
+import { excludeDuplicates, findNearbyCurated } from "./curated.js";
 import { GeoError, GeoErrorKind, distanceBetween, getCurrentPosition } from "./geo.js";
 import { buildTabs, formatRadius, renderLoading, renderMessage, renderPlaces, syncTabs } from "./ui.js";
 
@@ -59,8 +59,6 @@ async function run({ refreshLocation }) {
 
     renderLoading("주변을 찾는 중…");
 
-    // 직접 정리해 둔 장소를 먼저 본다. 사진·평점·한줄평이 붙어 있어 화면이 훨씬 낫다.
-    // 그 지역 데이터가 없으면(제주 밖 등) 카카오 실시간 검색으로 넘어간다.
     const query = {
       lat: state.coords.lat,
       lng: state.coords.lng,
@@ -68,18 +66,31 @@ async function run({ refreshLocation }) {
       radius: state.radius,
     };
 
-    let places = await findNearbyCurated(query);
-    let source = "curated";
+    // 직접 정리해 둔 장소를 위에, 카카오 실시간 검색 결과를 아래에 이어 붙인다.
+    // 어느 한쪽만 보여주면 제주 밖에서는 사진이 아예 없고, 제주 안에서는
+    // 큐레이션 몇 곳 때문에 주변 가게가 통째로 가려진다.
+    const curated = await findNearbyCurated(query);
     if (isStale()) return;
 
-    if (places.length === 0) {
-      places = await searchNearby({ appKey: state.appKey, ...query });
-      source = "kakao";
+    // 카카오가 실패해도 큐레이션 결과는 살린다. 둘 다 없을 때만 오류를 띄운다.
+    let nearby = [];
+    let nearbyError = null;
+    try {
+      nearby = await searchNearby({ appKey: state.appKey, ...query });
+    } catch (error) {
+      nearbyError = error;
     }
     if (isStale()) return;
 
-    if (places.length === 0) renderEmpty();
-    else renderPlaces(places, { source });
+    // 같은 곳이 위아래로 두 번 나오지 않게 카카오 쪽에서 중복을 뺀다.
+    nearby = excludeDuplicates(nearby, curated);
+
+    if (curated.length === 0 && nearby.length === 0) {
+      if (nearbyError) throw nearbyError;
+      renderEmpty();
+    } else {
+      renderPlaces({ curated, nearby });
+    }
   } catch (error) {
     if (isStale()) return;
     renderError(error);

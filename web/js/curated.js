@@ -54,6 +54,36 @@ export async function findNearbyCurated({ lat, lng, category, radius }) {
     .sort((a, b) => a.distanceMeters - b.distanceMeters);
 }
 
+/** 이 거리 안에서 이름이 겹치면 같은 곳으로 본다. */
+const SAME_PLACE_RADIUS_M = 100;
+
+/** 공백·중점을 걷어낸 비교용 이름. "제주 만장굴" 과 "제주만장굴" 을 같게 본다. */
+function normalizeName(name) {
+  return (name || "").replace(/[\s·]/g, "").toLowerCase();
+}
+
+function isSamePlace(a, b) {
+  const nameA = normalizeName(a.name);
+  const nameB = normalizeName(b.name);
+  if (!nameA || !nameB) return false;
+  if (nameA === nameB) return true;
+
+  // "만장굴" 과 "만장굴주차장" 처럼 한쪽이 다른 쪽을 품는 경우는
+  // 가까이 있을 때만 같은 곳으로 친다. 이름만 보면 다른 가게를 지울 수 있다.
+  const overlaps = nameA.includes(nameB) || nameB.includes(nameA);
+  if (!overlaps) return false;
+  return distanceBetween({ lat: a.lat, lng: a.lng }, { lat: b.lat, lng: b.lng }) <= SAME_PLACE_RADIUS_M;
+}
+
+/**
+ * 큐레이션 목록에 이미 있는 장소를 카카오 결과에서 걸러낸다.
+ * 같은 곳이 위아래로 두 번 나오는 것을 막는다.
+ */
+export function excludeDuplicates(places, curated) {
+  if (curated.length === 0) return places;
+  return places.filter((place) => !curated.some((item) => isSamePlace(item, place)));
+}
+
 /** 테스트에서 캐시를 비운다. */
 export function _resetCache() {
   loadPromise = null;
