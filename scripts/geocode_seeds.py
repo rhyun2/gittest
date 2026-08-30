@@ -25,7 +25,7 @@ import urllib.request
 from pathlib import Path
 
 # 같은 폴더의 build_places.py에서 씨드 파싱 규칙을 그대로 가져다 쓴다.
-from build_places import CATEGORY_CODES, SEED_DIR, _parse_coords
+from build_places import CATEGORY_CODES, LINKS_FILE, SEED_DIR, _parse_coords, link_key, load_links
 
 KEYWORD_URL = "https://dapi.kakao.com/v2/local/search/keyword.json"
 
@@ -114,12 +114,14 @@ def pick(candidates, bbox):
                 "lng": lng,
                 "name": item.get("place_name", ""),
                 "address": item.get("road_address_name") or item.get("address_name") or "",
+                # 카카오맵 장소 상세 페이지. 사진·리뷰·영업시간이 있어 좌표 링크보다 낫다.
+                "placeUrl": (item.get("place_url") or "").strip(),
             }, outside
         outside.append(item.get("place_name", "?"))
     return None, outside
 
 
-def geocode_file(path, api_key, args):
+def geocode_file(path, api_key, args, links):
     """파일 한 개를 처리하고 (새 줄 목록, 통계)를 돌려준다."""
     lines = path.read_text(encoding="utf-8").splitlines()
     meta = read_meta(lines)
@@ -130,7 +132,7 @@ def geocode_file(path, api_key, args):
 
     output = []
     category = None
-    stats = {"filled": 0, "kept": 0, "failed": 0}
+    stats = {"filled": 0, "kept": 0, "failed": 0, "linked": 0}
 
     for raw in lines:
         line = raw.strip()
@@ -154,7 +156,13 @@ def geocode_file(path, api_key, args):
             continue
 
         existing, _ = _parse_coords(fields[1])
-        if existing and not args.overwrite:
+        key = link_key(category, name)
+
+        # 좌표가 이미 있어도 카카오맵 링크가 없으면 한 번 더 조회한다.
+        # 그래야 좌표만 채워 둔 기존 씨드에 링크가 뒤늦게 붙는다.
+        needs_coords = existing is None or args.overwrite
+        needs_link = key not in links or args.overwrite
+        if not needs_coords and not needs_link:
             stats["kept"] += 1
             output.append(raw)
             continue
@@ -181,6 +189,16 @@ def geocode_file(path, api_key, args):
             reason = f"범위 밖 후보만 있음 ({', '.join(outside[:3])})" if outside else "검색 결과 없음"
             print(f"    ✗ {name}: {reason}", file=sys.stderr)
             stats["failed"] += 1
+            output.append(raw)
+            continue
+
+        if match.get("placeUrl"):
+            links[key] = {"placeUrl": match["placeUrl"], "matchedName": match["name"]}
+            stats["linked"] += 1
+
+        if not needs_coords:
+            # 링크만 얻으러 온 경우다. 씨드 줄은 손대지 않는다.
+            stats["kept"] += 1
             output.append(raw)
             continue
 
@@ -221,7 +239,8 @@ def main(argv=None):
         print(f"오류: 씨드 파일이 없습니다: {SEED_DIR}", file=sys.stderr)
         return 1
 
-    total = {"filled": 0, "kept": 0, "failed": 0}
+    links = load_links()
+    total = {"filled": 0, "kept": 0, "failed": 0, "linked": 0}
     for path in seed_files:
         if not path.is_file():
             print(f"오류: 파일이 없습니다: {path}", file=sys.stderr)
@@ -229,7 +248,7 @@ def main(argv=None):
 
         print(f"\n{path.name}")
         try:
-            output, stats = geocode_file(path, api_key, args)
+            output, stats = geocode_file(path, api_key, args, links)
         except GeocodeError as error:
             print(f"오류: {error}", file=sys.stderr)
             return 1
@@ -243,8 +262,17 @@ def main(argv=None):
             path.write_text("\n".join(output) + "\n", encoding="utf-8")
             print(f"  {path.name} 갱신")
 
+    if not args.dry_run and total["linked"]:
+        LINKS_FILE.parent.mkdir(parents=True, exist_ok=True)
+        LINKS_FILE.write_text(
+            json.dumps(links, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+            encoding="utf-8",
+        )
+        print(f"\n{LINKS_FILE.relative_to(LINKS_FILE.parent.parent)} 갱신 — 총 {len(links)}곳")
+
     print(
-        f"\n좌표 채움 {total['filled']}곳 · 이미 있어 건너뜀 {total['kept']}곳 · 실패 {total['failed']}곳"
+        f"\n좌표 채움 {total['filled']}곳 · 이미 있어 건너뜀 {total['kept']}곳 · "
+        f"실패 {total['failed']}곳 · 카카오맵 링크 {total['linked']}곳"
     )
     if total["failed"]:
         print("실패한 장소는 씨드 파일에 좌표를 직접 적어 주세요.", file=sys.stderr)
