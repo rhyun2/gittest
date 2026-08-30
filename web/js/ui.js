@@ -68,14 +68,22 @@ export function renderLoading(message = "주변을 찾는 중…") {
 }
 
 /**
- * 장소 목록. 카카오가 거리순으로 정렬해 준 순서를 그대로 쓴다.
+ * 장소 목록. 이미 거리순으로 정렬된 배열을 순서 그대로 그린다.
+ * (카카오는 서버가, 큐레이션은 curated.js 가 정렬해 준다)
+ *
  * @param {Array<object>} places
+ * @param {{source: "curated" | "kakao"}} options 목록 위에 붙일 출처 배지
  */
-export function renderPlaces(places) {
+export function renderPlaces(places, { source } = {}) {
   content.setAttribute("aria-busy", "false");
+
+  const wrapper = document.createDocumentFragment();
+  if (source) wrapper.append(buildSourceBadge(source, places.length));
 
   const list = document.createElement("ol");
   list.className = "place-list";
+  // 사진이 섞여 있으면 없는 항목의 왼쪽 정렬이 어긋난다. 자리만 비워 맞춰 준다.
+  if (places.some((place) => place.image)) list.classList.add("place-list--with-thumbs");
 
   for (const place of places) {
     const item = placeTemplate.content.cloneNode(true);
@@ -89,19 +97,49 @@ export function renderPlaces(places) {
       link.removeAttribute("rel");
     }
 
+    if (place.image) {
+      const thumb = item.querySelector(".place-thumb");
+      thumb.src = place.image;
+      thumb.hidden = false;
+      // 이미지가 깨져도 레이아웃이 무너지지 않게 조용히 감춘다.
+      thumb.addEventListener("error", () => {
+        thumb.hidden = true;
+      });
+    }
+
     item.querySelector(".place-name").textContent = place.name;
     item.querySelector(".place-category").textContent = place.category;
-    item.querySelector(".place-address").textContent = place.address;
+    item.querySelector(".place-address").textContent = place.address ?? "";
+    // 한줄평(직접 적은 메모)을 요약보다 앞세운다. 사람이 쓴 쪽이 더 쓸모 있다.
+    item.querySelector(".place-summary").textContent = place.note || place.summary || "";
 
     const distance = item.querySelector(".place-distance");
     distance.textContent = formatDistance(place.distanceMeters);
     // 스크린리더가 "231m"를 그대로 읽으면 무슨 값인지 모른다.
     distance.setAttribute("aria-label", `직선거리 ${formatDistance(place.distanceMeters)}`);
 
+    if (typeof place.rating === "number") {
+      const rating = item.querySelector(".place-rating");
+      rating.textContent = `★ ${place.rating.toFixed(1)}`;
+      rating.setAttribute("aria-label", `평점 5점 만점에 ${place.rating.toFixed(1)}점`);
+      rating.hidden = false;
+    }
+
     list.append(item);
   }
 
-  replace(list);
+  wrapper.append(list);
+  replace(wrapper);
+}
+
+function buildSourceBadge(source, count) {
+  const badge = document.createElement("p");
+  badge.className = "source-badge";
+  badge.textContent =
+    source === "curated"
+      ? `직접 정리한 장소 ${count}곳`
+      : "카카오맵 실시간 검색 결과";
+  return badge;
 }
 
 /**

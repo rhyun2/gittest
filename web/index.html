@@ -31,12 +31,17 @@
   <template id="place-item-template">
     <li class="place">
       <a class="place-link" target="_blank" rel="noopener noreferrer">
+        <img class="place-thumb" alt="" loading="lazy" decoding="async" hidden>
         <div class="place-main">
           <p class="place-name"></p>
           <p class="place-category"></p>
           <p class="place-address"></p>
+          <p class="place-summary"></p>
         </div>
-        <span class="place-distance"></span>
+        <span class="place-meta">
+          <span class="place-distance"></span>
+          <span class="place-rating" hidden></span>
+        </span>
       </a>
     </li>
   </template>
