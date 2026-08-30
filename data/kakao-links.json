@@ -31,6 +31,10 @@
     "matchedName": "새연교",
     "placeUrl": "http://place.map.kakao.com/26875121"
   },
+  "관광지|선덕사": {
+    "matchedName": "선덕사",
+    "placeUrl": "http://place.map.kakao.com/9447244"
+  },
   "관광지|섭지코지": {
     "matchedName": "섭지코지전망대",
     "placeUrl": "http://place.map.kakao.com/26295374"
@@ -123,9 +127,21 @@
     "matchedName": "돈사돈 본관",
     "placeUrl": "http://place.map.kakao.com/26799620"
   },
+  "맛집|마초스테이크": {
+    "matchedName": "마초스테이크 제주직영점",
+    "placeUrl": "http://place.map.kakao.com/1910930765"
+  },
   "맛집|명진전복": {
     "matchedName": "명진전복",
     "placeUrl": "http://place.map.kakao.com/20031551"
+  },
+  "맛집|보룡제과": {
+    "matchedName": "보룡제과",
+    "placeUrl": "http://place.map.kakao.com/10375136"
+  },
+  "맛집|사우스포레스트": {
+    "matchedName": "사우스포레스트",
+    "placeUrl": "http://place.map.kakao.com/1271835257"
   },
   "맛집|삼대국수회관": {
     "matchedName": "삼대국수회관 본점",
@@ -134,6 +150,22 @@
   "맛집|숙성도": {
     "matchedName": "숙성도 중문점",
     "placeUrl": "http://place.map.kakao.com/204534740"
+  },
+  "맛집|스시호시카이": {
+    "matchedName": "스시호시카이",
+    "placeUrl": "http://place.map.kakao.com/23718318"
+  },
+  "맛집|어느멋진날": {
+    "matchedName": "어느멋진날",
+    "placeUrl": "http://place.map.kakao.com/688388445"
+  },
+  "맛집|엄마손횟집": {
+    "matchedName": "엄마손횟집",
+    "placeUrl": "http://place.map.kakao.com/20663813"
+  },
+  "맛집|옥돔식당": {
+    "matchedName": "옥돔식당",
+    "placeUrl": "http://place.map.kakao.com/9940398"
   },
   "맛집|올레국수": {
     "matchedName": "당케올레국수",
@@ -151,6 +183,10 @@
     "matchedName": "자매예술국수",
     "placeUrl": "http://place.map.kakao.com/16871819"
   },
+  "맛집|제일성심당": {
+    "matchedName": "제일성심당",
+    "placeUrl": "http://place.map.kakao.com/10800528"
+  },
   "맛집|제주로운청해원": {
     "matchedName": "제주로운 청해원",
     "placeUrl": "http://place.map.kakao.com/1943641853"
@@ -158,6 +194,10 @@
   "맛집|중문생선구이": {
     "matchedName": "중문생선구이 중문본점",
     "placeUrl": "http://place.map.kakao.com/210485686"
+  },
+  "맛집|춘미향음식점": {
+    "matchedName": "춘미향식당",
+    "placeUrl": "http://place.map.kakao.com/20125337"
   },
   "맛집|한담국수": {
     "matchedName": "한담가든",
@@ -175,9 +215,17 @@
     "matchedName": "카페서연의집",
     "placeUrl": "http://place.map.kakao.com/19639423"
   },
+  "카페|아베베베이커리": {
+    "matchedName": "아베베커피미니 제주",
+    "placeUrl": "http://place.map.kakao.com/1580446035"
+  },
   "카페|오늘의바다": {
     "matchedName": "오늘의바다",
     "placeUrl": "http://place.map.kakao.com/1131993961"
+  },
+  "카페|카멜커피": {
+    "matchedName": "카멜커피 제주점",
+    "placeUrl": "http://place.map.kakao.com/1136918650"
   },
   "카페|카페델문도": {
     "matchedName": "델문도",

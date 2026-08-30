@@ -94,6 +94,15 @@
       "placeUrl": "https://place.map.kakao.com/26875121"
     },
     {
+      "id": "curated-관광지-선덕사",
+      "name": "선덕사",
+      "category": "관광지",
+      "categoryCode": "AT4",
+      "lat": 33.32018,
+      "lng": 126.593597,
+      "placeUrl": "https://place.map.kakao.com/9447244"
+    },
+    {
       "id": "curated-관광지-섭지코지",
       "name": "섭지코지",
       "category": "관광지",
@@ -358,6 +367,15 @@
       "placeUrl": "https://place.map.kakao.com/26799620"
     },
     {
+      "id": "curated-맛집-마초스테이크",
+      "name": "마초스테이크",
+      "category": "맛집",
+      "categoryCode": "FD6",
+      "lat": 33.463111,
+      "lng": 126.310012,
+      "placeUrl": "https://place.map.kakao.com/1910930765"
+    },
+    {
       "id": "curated-맛집-명진전복",
       "name": "명진전복",
       "category": "맛집",
@@ -365,6 +383,24 @@
       "lat": 33.532471,
       "lng": 126.850185,
       "placeUrl": "https://place.map.kakao.com/20031551"
+    },
+    {
+      "id": "curated-맛집-보룡제과",
+      "name": "보룡제과",
+      "category": "맛집",
+      "categoryCode": "FD6",
+      "lat": 33.448007,
+      "lng": 126.915217,
+      "placeUrl": "https://place.map.kakao.com/10375136"
+    },
+    {
+      "id": "curated-맛집-사우스포레스트",
+      "name": "사우스포레스트",
+      "category": "맛집",
+      "categoryCode": "FD6",
+      "lat": 33.298401,
+      "lng": 126.600742,
+      "placeUrl": "https://place.map.kakao.com/1271835257"
     },
     {
       "id": "curated-맛집-삼대국수회관",
@@ -389,6 +425,45 @@
       "image": "https://tong.visitkorea.or.kr/cms/resource/38/2800138_image2_1.jpg",
       "summary": "숙성도는 100% 제주 흑돼지를 차별화된 기술로 숙성하여 제공하는 돼지고기구이 전문점이다. 이곳은 선별된 정육을 진공으로 포장해 영하 1도의 염수로 보관하는 워터에이징 후, 바람과 온도, 습도를 관리하는 드라이에이…",
       "placeUrl": "https://place.map.kakao.com/204534740"
+    },
+    {
+      "id": "curated-맛집-스시호시카이",
+      "name": "스시호시카이",
+      "category": "맛집",
+      "categoryCode": "FD6",
+      "lat": 33.487765,
+      "lng": 126.517522,
+      "placeUrl": "https://place.map.kakao.com/23718318"
+    },
+    {
+      "id": "curated-맛집-어느멋진날",
+      "name": "어느멋진날",
+      "category": "맛집",
+      "categoryCode": "FD6",
+      "lat": 33.268755,
+      "lng": 126.654606,
+      "address": "부산광역시 기장군 일광읍 기장해안로 1286",
+      "image": "https://tong.visitkorea.or.kr/cms/resource/18/2753518_image2_1.jpg",
+      "summary": "바다가 바로 앞에 펼쳐지고 넓고 고급스러운 인테리어와 일광해수욕장을 바라보는 오션뷰로 연인들의 데이트 코스로 각광받고 있는 ‘어느멋진날’은 전복과 새우 요리가 일품이다. 대표 메뉴는 전복 내장을 넣어 볶은 전복밥과…",
+      "placeUrl": "https://place.map.kakao.com/688388445"
+    },
+    {
+      "id": "curated-맛집-엄마손횟집",
+      "name": "엄마손횟집",
+      "category": "맛집",
+      "categoryCode": "FD6",
+      "lat": 33.486695,
+      "lng": 126.488109,
+      "placeUrl": "https://place.map.kakao.com/20663813"
+    },
+    {
+      "id": "curated-맛집-옥돔식당",
+      "name": "옥돔식당",
+      "category": "맛집",
+      "categoryCode": "FD6",
+      "lat": 33.219971,
+      "lng": 126.249007,
+      "placeUrl": "https://place.map.kakao.com/9940398"
     },
     {
       "id": "curated-맛집-올레국수",
@@ -432,6 +507,15 @@
       "placeUrl": "https://place.map.kakao.com/16871819"
     },
     {
+      "id": "curated-맛집-제일성심당",
+      "name": "제일성심당",
+      "category": "맛집",
+      "categoryCode": "FD6",
+      "lat": 33.447947,
+      "lng": 126.914896,
+      "placeUrl": "https://place.map.kakao.com/10800528"
+    },
+    {
       "id": "curated-맛집-제주로운청해원",
       "name": "제주로운청해원",
       "category": "맛집",
@@ -451,6 +535,15 @@
       "lat": 33.24924,
       "lng": 126.430047,
       "placeUrl": "https://place.map.kakao.com/210485686"
+    },
+    {
+      "id": "curated-맛집-춘미향음식점",
+      "name": "춘미향음식점",
+      "category": "맛집",
+      "categoryCode": "FD6",
+      "lat": 33.231469,
+      "lng": 126.296526,
+      "placeUrl": "https://place.map.kakao.com/20125337"
     },
     {
       "id": "curated-맛집-한담국수",
@@ -495,6 +588,18 @@
       "placeUrl": "https://place.map.kakao.com/19639423"
     },
     {
+      "id": "curated-카페-아베베베이커리",
+      "name": "아베베베이커리",
+      "category": "카페",
+      "categoryCode": "CE7",
+      "lat": 33.511551,
+      "lng": 126.526599,
+      "address": "제주특별자치도 제주시 동문로6길 4",
+      "image": "https://tong.visitkorea.or.kr/cms/resource/38/2899538_image2_1.jpg",
+      "summary": "아베베 베이커리는 도민들이 사랑하는 제주 빵집으로 제주시 일도 1동 동문시장 12번 게이트 옆에 있다. 제주 로컬 식재료를 재해석하여 열다섯 가지 내외의 다양한 빵들을 선보이는 곳으로 대표 메뉴는 우도 땅콩 크림…",
+      "placeUrl": "https://place.map.kakao.com/1580446035"
+    },
+    {
       "id": "curated-카페-오늘의바다",
       "name": "오늘의바다",
       "category": "카페",
@@ -502,6 +607,15 @@
       "lat": 33.241641,
       "lng": 126.518488,
       "placeUrl": "https://place.map.kakao.com/1131993961"
+    },
+    {
+      "id": "curated-카페-카멜커피",
+      "name": "카멜커피",
+      "category": "카페",
+      "categoryCode": "CE7",
+      "lat": 33.55702,
+      "lng": 126.809911,
+      "placeUrl": "https://place.map.kakao.com/1136918650"
     },
     {
       "id": "curated-카페-카페델문도",
