@@ -5,6 +5,7 @@
  * 상태는 평범한 객체 하나이고, 바뀔 때마다 run()이 화면을 다시 그린다.
  */
 import { CATEGORIES, PlacesError, PlacesErrorKind, searchNearby } from "./kakao.js";
+import { findNearbyCurated } from "./curated.js";
 import { GeoError, GeoErrorKind, distanceBetween, getCurrentPosition } from "./geo.js";
 import { buildTabs, formatRadius, renderLoading, renderMessage, renderPlaces, syncTabs } from "./ui.js";
 
@@ -58,17 +59,27 @@ async function run({ refreshLocation }) {
 
     renderLoading("주변을 찾는 중…");
 
-    const places = await searchNearby({
-      appKey: state.appKey,
+    // 직접 정리해 둔 장소를 먼저 본다. 사진·평점·한줄평이 붙어 있어 화면이 훨씬 낫다.
+    // 그 지역 데이터가 없으면(제주 밖 등) 카카오 실시간 검색으로 넘어간다.
+    const query = {
       lat: state.coords.lat,
       lng: state.coords.lng,
       category: state.category,
       radius: state.radius,
-    });
+    };
+
+    let places = await findNearbyCurated(query);
+    let source = "curated";
+    if (isStale()) return;
+
+    if (places.length === 0) {
+      places = await searchNearby({ appKey: state.appKey, ...query });
+      source = "kakao";
+    }
     if (isStale()) return;
 
     if (places.length === 0) renderEmpty();
-    else renderPlaces(places);
+    else renderPlaces(places, { source });
   } catch (error) {
     if (isStale()) return;
     renderError(error);
