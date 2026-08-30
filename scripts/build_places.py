@@ -25,6 +25,10 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 SEED_DIR = REPO_ROOT / "data" / "seeds"
 OUTPUT = REPO_ROOT / "web" / "data" / "places.json"
 
+# geocode_seeds.py 가 만들어 두는 파일. 장소별 카카오맵 상세 페이지 주소가 들어 있다.
+# 씨드는 사람이 손으로 고치는 파일이라 URL 같은 긴 값으로 지저분해지지 않게 따로 뒀다.
+LINKS_FILE = REPO_ROOT / "data" / "kakao-links.json"
+
 TOUR_API_BASE = "https://apis.data.go.kr/B551011/KorService2"
 
 # 씨드의 카테고리 이름 -> 앱이 쓰는 카카오 카테고리 코드.
@@ -47,6 +51,23 @@ SUMMARY_MAX_LEN = 120
 
 class SeedError(Exception):
     pass
+
+
+def link_key(category, name):
+    """카카오 링크 파일의 키. 카테고리가 다르면 같은 상호도 다른 곳이다."""
+    return f"{category}|{name}"
+
+
+def load_links():
+    """geocode_seeds.py 가 저장해 둔 카카오맵 링크. 없으면 빈 값으로 넘어간다."""
+    if not LINKS_FILE.is_file():
+        return {}
+    try:
+        data = json.loads(LINKS_FILE.read_text(encoding="utf-8"))
+    except json.JSONDecodeError:
+        print(f"경고: {LINKS_FILE.name} 를 읽을 수 없어 무시합니다.", file=sys.stderr)
+        return {}
+    return data if isinstance(data, dict) else {}
 
 
 def parse_seed(text, source_name):
@@ -245,8 +266,9 @@ def enrich(entry, api_key):
 # ── 출력 ───────────────────────────────────────────────────────────────────
 
 
-def to_record(entry):
+def to_record(entry, links=None):
     """앱이 읽는 형태로 바꾼다. 빈 값은 아예 넣지 않아 JSON을 가볍게 유지한다."""
+    links = links or {}
     record = {
         "id": f"curated-{entry['category']}-{entry['name']}",
         "name": entry["name"],
@@ -261,6 +283,12 @@ def to_record(entry):
             record[key] = value
     if entry.get("rating") is not None:
         record["rating"] = entry["rating"]
+
+    # 카카오맵 상세 페이지 주소가 있으면 넣는다. 앱은 이 값이 있으면 좌표 링크 대신 쓴다.
+    link = links.get(link_key(entry["category"], entry["name"]), {})
+    place_url = _https(link.get("placeUrl", ""))
+    if place_url:
+        record["placeUrl"] = place_url
     return record
 
 
@@ -306,7 +334,8 @@ def main(argv=None):
     usable = [e for e in entries if e["lat"] is not None and e["lng"] is not None]
     missing = [e["name"] for e in entries if e["lat"] is None or e["lng"] is None]
 
-    records = [to_record(e) for e in usable]
+    links = load_links()
+    records = [to_record(e, links) for e in usable]
     records.sort(key=lambda r: (r["category"], r["name"]))
 
     OUTPUT.parent.mkdir(parents=True, exist_ok=True)
@@ -319,10 +348,9 @@ def main(argv=None):
     for record in records:
         counts[record["category"]] = counts.get(record["category"], 0) + 1
     for category, count in sorted(counts.items()):
-        with_image = sum(
-            1 for r in records if r["category"] == category and r.get("image")
-        )
-        print(f"  {category} {count}곳 (사진 {with_image}곳)")
+        with_image = sum(1 for r in records if r["category"] == category and r.get("image"))
+        with_link = sum(1 for r in records if r["category"] == category and r.get("placeUrl"))
+        print(f"  {category} {count}곳 (사진 {with_image}곳 · 카카오맵 링크 {with_link}곳)")
 
     for warning in warnings:
         print(f"경고: {warning}", file=sys.stderr)

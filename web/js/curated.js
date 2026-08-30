@@ -37,6 +37,19 @@ async function loadPlaces() {
 }
 
 /**
+ * 카카오맵에서 이 장소를 열어 주는 링크.
+ *
+ * 카카오 검색 결과는 장소 상세 페이지 URL(place_url)을 갖고 오지만, 큐레이션 장소는
+ * 카카오 장소 ID가 없다. 대신 좌표로 지도를 여는 링크 형식을 쓴다. PC냐 모바일이냐에
+ * 따라 카카오가 알아서 맞는 화면으로 보내 준다.
+ */
+function kakaoMapLink({ name, lat, lng }) {
+  // 이름,위도,경도 를 쉼표로 구분하는 형식이라 이름 안의 쉼표는 형식을 깨뜨린다.
+  const label = encodeURIComponent(String(name).replace(/,/g, " ").trim());
+  return `https://map.kakao.com/link/map/${label},${lat},${lng}`;
+}
+
+/**
  * 큐레이션 목록에서 반경 안의 장소를 가까운 순으로 돌려준다.
  * @returns {Promise<Array<object>>} 없으면 빈 배열
  */
@@ -49,6 +62,8 @@ export async function findNearbyCurated({ lat, lng, category, radius }) {
     .map((place) => ({
       ...place,
       distanceMeters: Math.round(distanceBetween(origin, { lat: place.lat, lng: place.lng })),
+      // 나중에 씨드나 수집 스크립트가 실제 place_url 을 채워 주면 그쪽을 우선한다.
+      placeUrl: place.placeUrl || kakaoMapLink(place),
     }))
     .filter((place) => place.distanceMeters <= radius)
     .sort((a, b) => a.distanceMeters - b.distanceMeters);
