@@ -12,6 +12,7 @@ TourAPI 키는 여기서만 쓰이며 결과 JSON에는 들어가지 않는다.
 
 import argparse
 import json
+import math
 import os
 import re
 import sys
@@ -47,6 +48,10 @@ CONTENT_TYPE_IDS = {
 }
 
 SUMMARY_MAX_LEN = 120
+
+# TourAPI 후보가 씨드 좌표에서 이만큼 넘게 떨어져 있으면 다른 장소로 본다.
+# 한라산국립공원처럼 넓은 대상도 있어 여유를 두되, 다른 시·군까지 넘어갈 만큼은 아니다.
+MATCH_MAX_DISTANCE_M = 2_000
 
 
 class SeedError(Exception):
@@ -225,6 +230,53 @@ def _strip_html(text):
     return plain
 
 
+def _haversine(lat1, lng1, lat2, lng2):
+    """두 좌표 사이의 직선거리(미터)."""
+    radius = 6_371_000
+    d_lat = math.radians(lat2 - lat1)
+    d_lng = math.radians(lng2 - lng1)
+    h = (
+        math.sin(d_lat / 2) ** 2
+        + math.cos(math.radians(lat1)) * math.cos(math.radians(lat2)) * math.sin(d_lng / 2) ** 2
+    )
+    return 2 * radius * math.asin(math.sqrt(h))
+
+
+def _normalize(name):
+    """비교용 이름. 공백·중점·쉼표를 걷어낸다."""
+    return re.sub(r"[\s·,]", "", name or "")
+
+
+def _is_plausible(entry, item):
+    """TourAPI 후보가 정말 이 장소인지 본다.
+
+    키워드 검색은 전국을 뒤지기 때문에 이름이 비슷한 다른 지역 콘텐츠가 1순위로
+    올라오는 일이 잦다. 실제로 '우도'가 강진군, '이중섭거리'가 부산으로 매칭됐다.
+
+    씨드의 좌표는 카카오 검색을 bbox로 걸러 얻은 값이라 믿을 수 있다. 그것을
+    기준선으로 삼아 두 가지를 함께 요구한다. 하나만 보면 걸러지지 않는다.
+
+      거리 — 좌표가 멀면 다른 지역이다
+      이름 — 가까워도 이름이 무관하면 다른 장소다 (동문시장 자리에 잡힌 다이소)
+    """
+    name_a = _normalize(entry["name"])
+    name_b = _normalize(item.get("title", ""))
+    if not name_a or not name_b:
+        return False
+    if name_a not in name_b and name_b not in name_a:
+        return False
+
+    # 씨드에 좌표가 없으면 TourAPI 좌표를 받아 쓰는 상황이라 거리 검증을 할 수 없다.
+    if entry["lat"] is None or entry["lng"] is None:
+        return True
+
+    try:
+        lng, lat = float(item["mapx"]), float(item["mapy"])
+    except (KeyError, TypeError, ValueError):
+        return False
+    return _haversine(entry["lat"], entry["lng"], lat, lng) <= MATCH_MAX_DISTANCE_M
+
+
 def enrich(entry, api_key):
     """TourAPI에서 좌표·사진·주소·요약을 찾아 채운다. 씨드에 적힌 값이 우선이다."""
     content_type = CONTENT_TYPE_IDS.get(entry["category"], "")
@@ -236,8 +288,16 @@ def enrich(entry, api_key):
     if not items:
         return False
 
-    # 카테고리가 맞는 항목을 우선 고르고, 없으면 첫 번째를 쓴다.
-    match = next((i for i in items if str(i.get("contenttypeid")) == content_type), items[0])
+    # 엉뚱한 지역·업소를 먼저 걸러낸다. 검증을 통과한 후보가 없으면 보강하지 않는다.
+    # 잘못된 사진과 설명이 붙는 것보다 비어 있는 편이 낫다.
+    candidates = [i for i in items if _is_plausible(entry, i)]
+    if not candidates:
+        return False
+
+    # 남은 후보 중 카테고리가 맞는 것을 우선한다.
+    match = next(
+        (i for i in candidates if str(i.get("contenttypeid")) == content_type), candidates[0]
+    )
 
     # TourAPI도 카카오와 같은 함정이 있다: mapx가 경도, mapy가 위도다.
     if entry["lat"] is None or entry["lng"] is None:
