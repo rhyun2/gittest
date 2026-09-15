@@ -180,6 +180,30 @@ init(locationService: LocationService? = nil) {
 `NearbyListView` 는 여기에 더해 **init 자체에 `@MainActor` 를 붙여야** 했다. `View` 는 구조체이고
 `body` 만 `@MainActor` 라, init 본문은 격리되지 않은 상태이기 때문이다.
 
+### `CLLocationUpdate` 의 권한 속성은 iOS 18부터다
+
+```
+'authorizationDenied' is only available in iOS 18.0 or newer
+```
+
+`CLLocationUpdate` 자체는 iOS 17.0부터지만 `authorizationDenied` · `authorizationDeniedGlobally` ·
+`authorizationRestricted` 세 속성은 **iOS 18에 추가**됐다. 이 앱의 배포 타깃은 iOS 17.0이다.
+
+타깃을 18로 올리는 대신, 예전부터 있던 `CLLocationManager.authorizationStatus` 로 같은 값을 읽도록
+바꿨다. 다만 통로가 달라서 한 가지를 더 해야 했다 — 권한이 거부되면 `liveUpdates()` 는 **아무것도
+내놓지 않고 조용히 멈춘다.** 스트림 안에서 상태를 볼 기회조차 없다는 뜻이다.
+
+그래서 `waitForRefusal()` 을 작업 그룹에 한 갈래 더 넣었다. 300ms마다 권한 상태만 확인하다가
+거부가 잡히면 사유를 던진다. 이게 없으면 권한을 껐을 때 "권한이 꺼져 있습니다" 대신 15초 뒤
+타임아웃 안내가 떠서, 사용자가 무엇을 고쳐야 하는지 알 수 없다.
+
+```
+작업 그룹 ─┬─ firstUsableCoordinate()  좌표를 기다린다
+           ├─ waitForRefusal()         권한 거부를 감시한다   ← 추가
+           └─ Task.sleep(timeout)      15초 상한
+           가장 먼저 끝난 갈래가 결과가 된다
+```
+
 ## 검증 상태
 
 | 항목 | 상태 |

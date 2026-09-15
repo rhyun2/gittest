@@ -53,6 +53,9 @@ final class LocationService {
             group.addTask { @MainActor in
                 try await self.firstUsableCoordinate()
             }
+            group.addTask { @MainActor in
+                try await self.waitForRefusal()
+            }
             group.addTask {
                 // 실내에서는 유효한 fix가 영영 안 올 수 있어 상한을 둔다.
                 try await Task.sleep(for: timeout)
@@ -67,15 +70,30 @@ final class LocationService {
         }
     }
 
+    /// 권한이 거부되면 사유를 던진다. 허용되어 있는 동안에는 영원히 돌아오지 않는다.
+    ///
+    /// `CLLocationUpdate`에도 `authorizationDenied` 같은 속성이 있지만 **iOS 18부터**다.
+    /// 배포 타깃이 iOS 17.0이라 쓸 수 없어, 예전부터 있던 `CLLocationManager`의
+    /// `authorizationStatus`를 대신 본다. 같은 값을 다른 통로로 읽는 것이다.
+    ///
+    /// 거부된 상태에서는 `liveUpdates()`가 아무것도 내놓지 않는다. 이 감시가 없으면
+    /// 권한을 껐을 때 "거부됨"이 아니라 타임아웃 안내가 떠 사용자가 원인을 알 수 없다.
+    private func waitForRefusal() async throws -> CLLocationCoordinate2D {
+        while true {
+            switch manager.authorizationStatus {
+            case .denied:
+                throw LocationError.denied
+            case .restricted:
+                throw LocationError.restricted
+            default:
+                // .notDetermined면 아직 팝업에 답하지 않은 것이다. 답을 기다린다.
+                try await Task.sleep(for: .milliseconds(300))
+            }
+        }
+    }
+
     private func firstUsableCoordinate() async throws -> CLLocationCoordinate2D {
         for try await update in CLLocationUpdate.liveUpdates() {
-            if update.authorizationDenied || update.authorizationDeniedGlobally {
-                throw LocationError.denied
-            }
-            if update.authorizationRestricted {
-                throw LocationError.restricted
-            }
-
             isReducedAccuracy = manager.accuracyAuthorization == .reducedAccuracy
 
             guard let location = update.location else { continue }
