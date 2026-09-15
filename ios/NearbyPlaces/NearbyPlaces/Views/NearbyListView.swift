@@ -4,8 +4,11 @@ import UIKit
 struct NearbyListView: View {
     @State private var viewModel: NearbyViewModel
 
-    init(viewModel: NearbyViewModel = NearbyViewModel()) {
-        _viewModel = State(initialValue: viewModel)
+    /// `NearbyViewModel`이 `@MainActor`라 init도 같이 묶어야 본문에서 만들 수 있다.
+    /// 기본값을 `nil`로 두는 이유는 뷰모델 쪽과 같다 — 기본 인자 식은 격리 밖에서 평가된다.
+    @MainActor
+    init(viewModel: NearbyViewModel? = nil) {
+        _viewModel = State(initialValue: viewModel ?? NearbyViewModel())
     }
 
     var body: some View {

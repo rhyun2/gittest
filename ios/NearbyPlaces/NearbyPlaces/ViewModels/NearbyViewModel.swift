@@ -33,12 +33,18 @@ final class NearbyViewModel {
     private var lastCoordinate: CLLocationCoordinate2D?
     private var searchTask: Task<Void, Never>?
 
+    /// 기본값을 `nil`로 두고 실제 객체는 본문에서 만든다.
+    ///
+    /// 기본 인자 식은 호출부에서, 즉 이 타입의 `@MainActor` 격리 **밖에서** 평가된다.
+    /// 그래서 `locationService: LocationService = LocationService()` 처럼 써 두면
+    /// "main actor-isolated initializer 'init()' in a synchronous nonisolated context"
+    /// 로 막힌다. 반면 init 본문은 `@MainActor`라 안에서는 자유롭게 만들 수 있다.
     init(
-        locationService: LocationService = LocationService(),
-        repository: PlacesRepository = CuratedPlacesRepository()
+        locationService: LocationService? = nil,
+        repository: PlacesRepository? = nil
     ) {
-        self.locationService = locationService
-        self.repository = repository
+        self.locationService = locationService ?? LocationService()
+        self.repository = repository ?? CuratedPlacesRepository()
     }
 
     /// 첫 진입 시 한 번만 실행한다.

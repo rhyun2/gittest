@@ -11,8 +11,8 @@ https://rhyun2.github.io/gittest/data/places.json
 **API 키가 하나도 필요 없다.** 공개된 정적 JSON을 내려받는 것이 전부다. 씨드를 고쳐 웹앱을 재배포하면
 앱을 다시 빌드하지 않아도 내용이 바뀐다.
 
-> ⚠️ **이 코드는 아직 한 번도 컴파일된 적이 없다.** Swift 툴체인이 없는 환경에서 작성했다.
-> 첫 빌드에서 오류가 나올 수 있고, 그 메시지를 보고 고치면 된다.
+> ⚠️ **이 코드는 Swift 툴체인이 없는 환경에서 작성했다.** 첫 빌드에서 나온 오류는 아래
+> [첫 빌드에서 고친 것](#첫-빌드에서-고친-것)에 정리했고, 더 나올 수 있다.
 
 ---
 
@@ -153,6 +153,33 @@ ios/NearbyPlaces/
 **장소 목록은 앱이 살아 있는 동안 한 번만 내려받는다.** 당겨서 새로고침은 위치를 다시 잡는 것이지
 데이터를 다시 받는 것이 아니다. 데이터를 갱신하려면 앱을 재실행한다.
 
+## 첫 빌드에서 고친 것
+
+### 기본 인자에서 `@MainActor` 타입을 만들 수 없다
+
+```
+Call to main actor-isolated initializer 'init()' in a synchronous nonisolated context
+```
+
+`NearbyViewModel` 과 `NearbyListView` 두 곳에서 같은 이유로 났다.
+
+```swift
+// ❌ 기본 인자 식은 호출부에서, 즉 @MainActor 격리 밖에서 평가된다
+init(locationService: LocationService = LocationService()) { … }
+
+// ✅ 기본값은 nil, 실제 객체는 격리된 본문에서 만든다
+init(locationService: LocationService? = nil) {
+    self.locationService = locationService ?? LocationService()
+}
+```
+
+기본 인자는 함수 안이 아니라 **부르는 쪽에서** 계산된다. 그래서 타입이 `@MainActor` 여도
+그 기본값 식은 격리를 물려받지 못한다. 주입 지점(테스트·프리뷰용)은 그대로 남기고 싶었으므로
+기본값만 `nil` 로 미뤘다.
+
+`NearbyListView` 는 여기에 더해 **init 자체에 `@MainActor` 를 붙여야** 했다. `View` 는 구조체이고
+`body` 만 `@MainActor` 라, init 본문은 격리되지 않은 상태이기 때문이다.
+
 ## 검증 상태
 
 | 항목 | 상태 |
@@ -160,5 +187,5 @@ ios/NearbyPlaces/
 | JSON 디코딩 계약 (배포 데이터 61건) | ✅ 전부 디코딩 가능하도록 검사 |
 | 이미지 URL이 https 인지 (ATS 차단 방지) | ✅ 61건 모두 https |
 | `.xcodeproj` 참조 무결성 | ✅ 미정의 참조 0건 |
-| **Swift 컴파일** | ❌ **미검증** — 첫 빌드에서 확인된다 |
+| **Swift 컴파일** | ⚠️ 진행 중 — 첫 빌드의 동시성 격리 오류 2건을 고쳤다 |
 | 시뮬레이터 실행 | ❌ 미검증 |
