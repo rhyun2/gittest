@@ -31,6 +31,10 @@
     "matchedName": "새연교",
     "placeUrl": "http://place.map.kakao.com/26875121"
   },
+  "관광지|서울방이동고분군": {
+    "matchedName": "서울방이동고분군",
+    "placeUrl": "http://place.map.kakao.com/10392219"
+  },
   "관광지|선덕사": {
     "matchedName": "선덕사",
     "placeUrl": "http://place.map.kakao.com/9447244"
@@ -42,6 +46,10 @@
   "관광지|성산일출봉": {
     "matchedName": "성산일출봉 정상전망대",
     "placeUrl": "http://place.map.kakao.com/1762278118"
+  },
+  "관광지|송리단길": {
+    "matchedName": "송리단길",
+    "placeUrl": "http://place.map.kakao.com/540607897"
   },
   "관광지|쇠소깍": {
     "matchedName": "쇠소깍관광지",
@@ -135,6 +143,10 @@
     "matchedName": "명진전복",
     "placeUrl": "http://place.map.kakao.com/20031551"
   },
+  "맛집|바삭한식당": {
+    "matchedName": "바삭한식당",
+    "placeUrl": "http://place.map.kakao.com/829680300"
+  },
   "맛집|보룡제과": {
     "matchedName": "보룡제과",
     "placeUrl": "http://place.map.kakao.com/10375136"
@@ -222,6 +234,10 @@
   "카페|오늘의바다": {
     "matchedName": "오늘의바다",
     "placeUrl": "http://place.map.kakao.com/1131993961"
+  },
+  "카페|오린지": {
+    "matchedName": "오린지",
+    "placeUrl": "http://place.map.kakao.com/1030591315"
   },
   "카페|카멜커피": {
     "matchedName": "카멜커피 제주점",
